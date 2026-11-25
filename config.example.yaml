@@ -1,0 +1,14 @@
+quota:
+  timezone: Asia/Jakarta
+  per_user_daily: 10
+  global_daily: 200
+  unlimited_numbers: []
+media:
+  max_input_bytes: 20971520
+  max_duration_seconds: 5
+  sticker_max_bytes: 500000
+  audio_max_bytes: 262144
+storage:
+  database_path: ./data/bot.sqlite
+  session_path: ./data/session
+  temp_path: ./data/tmp

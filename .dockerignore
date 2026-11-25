@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+data
+config.yaml
+config.docker.yaml
+local-output
+*.sqlite*
+.env

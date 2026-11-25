@@ -1,0 +1,43 @@
+{
+  "name": "stacia",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "doctor": "node --import tsx src/doctor.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "vitest run",
+    "convert": "node --import tsx src/convert.ts",
+    "format": "prettier --write src tests package.json tsconfig.json config.example.yaml",
+    "format:check": "prettier --check src tests package.json tsconfig.json config.example.yaml",
+    "start": "node --import tsx src/index.ts",
+    "dev": "node --import tsx src/index.ts",
+    "pair": "node --import tsx src/index.ts --pair",
+    "local": "node --import tsx src/index.ts --interactive",
+    "postinstall": "node scripts/patch-baileys.mjs",
+    "protocol:patch": "node scripts/patch-baileys.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "baileys": "7.0.0-rc14",
+    "better-sqlite3": "13.2.0",
+    "pino": "10.4.0",
+    "proper-lockfile": "4.1.2",
+    "qrcode-terminal": "0.12.0",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "26.6.10",
+    "prettier": "3.10.1",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.1.2"
+  }
+}
