@@ -1,7 +1,8 @@
 # Third-party notices
 
-Sound sticker protocol research/reference:
-https://github.com/DavidRamirez206/whatsapp-sound-sticker-bot
+Protocol research and implementation reference: [WhatsApp Sound Sticker Bot](https://github.com/DavidRamirez206/whatsapp-sound-sticker-bot).
+
+The license text below applies to that reference. It does not assign a license to Stacia.
 
 MIT License
 

@@ -1,13 +1,23 @@
-# Stacia — local WhatsApp sound sticker bot
+# Stacia
 
-Send a video with caption `.s`, or reply `.s` to a video. The bot downloads,
-converts and attempts to send one native animated sticker with embedded audio.
-**Recipient sound playback is experimental and still requires a real device test.**
-There is no silent-sticker or separate voice-note fallback.
+A self-hosted WhatsApp bot that converts videos into animated stickers with embedded audio. Built with TypeScript, Baileys, FFmpeg, and SQLite.
 
-## Run locally with Docker (recommended)
+> **Experimental:** conversion and protocol serialization are tested offline. Native sticker appearance and sound playback still need verification on a supported WhatsApp client. Stacia is currently intended for local testing.
 
-Docker must be running. Create a private configuration only if it does not exist:
+## Features
+
+- Convert a video using a `.s` caption or a reply to an existing video.
+- Generate a 512 × 512 animated WebP with synchronized mono Opus audio.
+- Apply daily personal and global quotas, with an unlimited-number allowlist.
+- Process requests through a bounded queue with persistent deduplication.
+- Keep the WhatsApp session and quota records across restarts.
+- Run with Docker Compose, without a public port or web dashboard.
+
+Videos must contain audio. The bot does not substitute a silent sticker or send a separate voice note.
+
+## Quick start with Docker
+
+You need Docker with Compose and a dedicated WhatsApp account. Run these commands from the repository root:
 
 ```sh
 test -f config.docker.yaml || cp config.docker.example.yaml config.docker.yaml
@@ -15,79 +25,111 @@ docker compose build
 docker compose run --rm --no-deps bot npm run local -- --config /app/config.yaml
 ```
 
-Scan the QR from WhatsApp → Linked devices. The same process continues running
-after pairing. Keep the terminal open. From a second WhatsApp account send `.ping`,
-then send a short MP4 with sound and caption `.s`. You can also reply `.s` to a
-previous video. Own messages, groups and view-once media are ignored/rejected.
+Open **WhatsApp → Linked devices → Link a device** on the bot's phone and scan the QR in your terminal. Keep the terminal open: the bot continues running after pairing.
 
-Default input limit is 20 MiB; output is trimmed to at most 5 seconds. Silent
-videos are rejected. One conversion runs at a time with ten waiting slots and one
-pending job per verified sender. `.limit` shows personal/global accounting;
-`.help` shows usage. Success counts on transport acceptance, not playback.
-A send failure with uncertain outcome is not retried and its quota slot is held.
+From **another WhatsApp account**, send `.ping`, then send a short video with audio and the caption `.s`. You can also reply `.s` to a previously sent video.
 
-Ctrl+C stops the foreground container. Start the same command again to reuse the
-session. Docker uses its own persistent volume; a host-side Node session is not
-automatically copied. Do not run host and container bots against the same linked
-session at the same time.
+Press `Ctrl+C` to stop. Run the same command again to reuse the saved session. Only run one bot process against a session at a time.
 
-After the manual test, stop the foreground command before starting background mode:
+### Run in the background
+
+Stop the foreground command first, then run:
 
 ```sh
 docker compose up -d
 docker compose logs -f --tail=100 bot
 ```
 
-Never run background mode and pairing/foreground mode simultaneously. Check
-`docker compose ps` first. Stop background mode with `docker compose stop bot`.
-Do not use `docker compose down -v` unless intentionally deleting session and quota data.
+To stop the service:
 
-## Without Docker
+```sh
+docker compose stop bot
+```
 
-Requires Node.js 24 and FFmpeg/FFprobe with libwebp_anim and libopus:
+The named Docker volume stores the session and database. **`docker compose down -v` deletes that data.**
+
+## Commands
+
+| Command  | Usage                                                       |
+| -------- | ----------------------------------------------------------- |
+| `.s`     | Send as a video caption, or reply to a video.               |
+| `.limit` | Show personal/global quota status and the daily reset time. |
+| `.ping`  | Check whether the bot can reply.                            |
+| `.help`  | Show input constraints and usage instructions.              |
+
+Commands are case-insensitive and require an exact match after trimming whitespace. The bot accepts direct chats only; group messages and its own messages are ignored. View-once media is not processed.
+
+## Default limits
+
+| Setting              | Default                          |
+| -------------------- | -------------------------------- |
+| Input size           | 20 MiB                           |
+| Output duration      | Up to 5 seconds                  |
+| Animated sticker     | 512 × 512, up to 500,000 bytes   |
+| Audio                | Mono Opus, up to 256 KiB         |
+| Personal quota       | 10 conversions per day           |
+| Global quota         | 200 conversions per day          |
+| Reset timezone       | `Asia/Jakarta`                   |
+| Queue                | 1 active worker, 10 waiting jobs |
+| Per-user concurrency | 1 pending or active job          |
+
+A successful conversion is counted when the transport accepts the outgoing message. Pending requests reserve quota. If a send outcome is uncertain, the bot retains that reservation and does not automatically resend.
+
+Edit the private YAML file and restart to apply changes. See [configuration](docs/configuration.md) for supported fields and allowlist behavior.
+
+## Run without Docker
+
+Requirements: Node.js 24, npm, and FFmpeg/FFprobe with `libwebp_anim` and `libopus` support.
 
 ```sh
 npm ci
 test -f config.yaml || cp config.example.yaml config.yaml
 npm run doctor
-caffeinate -i npm run local
+npm run local
 ```
 
-`caffeinate` is macOS-only; elsewhere use `npm run local`. A separate pairing flow
-is available with `npm run pair` followed by `npm start`. No `tsc` step is needed.
-The image similarly runs TypeScript with the tsx runtime loader.
+On macOS, `caffeinate -i npm run local` prevents idle sleep while the command runs. Keep the laptop connected to the internet and its lid open.
 
-## Offline conversion and tests
+The app runs TypeScript through `tsx`; a compilation step is not required. Host and Docker runs use separate session storage by default.
+
+## Development
+
+Convert a local video without connecting to WhatsApp:
 
 ```sh
 npm run convert -- --input video.mp4 --output-dir local-output
-npm test
+```
 
+This writes `sticker.webp` and `audio.ogg`. Only the bot's protocol adapter combines their uploaded metadata into a native sound-sticker message.
+
+Run the automated tests:
+
+```sh
+npm test
+```
+
+Or test inside Docker:
+
+```sh
 docker build --target test -t stacia:test .
 docker run --rm --memory=300m --cpus=1 stacia:test npm test -- --maxWorkers=1
 ```
 
-Offline conversion writes `sticker.webp` and `audio.ogg` to the requested output
-directory. The bot cleans its temporary files after each job and removes abandoned
-work directories at startup. Tests use synthetic media and mocked WhatsApp transport;
-they never pair or send real messages. See `docs/protocol-spike.md` for the live gate.
+Tests use synthetic media and mocked WhatsApp transport. They do not pair an account or verify recipient playback. Baileys is pinned; `npm ci` installs a version-checked schema extension. See [protocol details](docs/protocol.md) before upgrading it.
 
-## Operations and remaining work
+## Documentation
 
-A heartbeat lock prevents concurrent session access and permits recovery after a
-hard crash once the 30-second stale interval passes. Do not manually delete a live
-lock. Older versions used an empty `.running` directory: stop the old process
-before removing that legacy directory if startup reports it.
+- [Configuration](docs/configuration.md) — YAML fields, paths, and quotas.
+- [Operations](docs/operations.md) — sessions, logs, backups, and troubleshooting.
+- [Protocol and compatibility](docs/protocol.md) — audio encoding and live validation.
+- [Product requirements](PRD.md) — intended MVP scope, including unfinished work.
+- [Archive](archive/README.md) — historical implementation and validation notes.
+- [Third-party notices](THIRD_PARTY_NOTICES.md) — reference attribution and license text.
 
-The Compose budget is 300 MiB and one CPU for local testing. It is not a verified
-VPS capacity recommendation. The local Mac image is ARM64; build a Linux AMD64 image
-separately for the x86-64 VPS. There are no public application ports.
+## Project status
 
-Health reports connection freshness, not full media/database readiness. Docker does
-not restart on health status alone. A revoked session needs operator intervention;
-stop the service before re-pairing to avoid restart loops. Back up private config,
-database and session volume with the service stopped; never share QR/session files.
+The local implementation includes video conversion, sound-sticker payload generation, quota enforcement, queueing, and request recovery. Remaining work includes real-device playback verification, complete PRD configuration coverage, versioned migrations and retention, production auth lifecycle hardening, and VPS load testing.
 
-Not yet complete: the live playback gate, full PRD configuration, versioned schema
-migrations/retention, all failure-path tests, production auth lifecycle, and VPS
-resource/soak validation. This milestone is for local testing, not production release.
+The Docker memory/CPU limits are a local test budget, not a production capacity guarantee. Build for the target CPU architecture before deploying to a VPS.
+
+Stacia uses an unofficial WhatsApp integration and is not affiliated with Meta or WhatsApp. Use a secondary account for consensual testing. Media is processed by the bot operator; temporary files are removed after processing. Keep QR codes, session files, and private configuration out of source control.

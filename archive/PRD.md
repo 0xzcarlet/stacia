@@ -26,18 +26,18 @@ No frontend, public HTTP API, admin dashboard, payment, subscription, multi-acco
 
 ## 2. Technical decisions
 
-| Layer | Choice | Rationale |
-| --- | --- | --- |
-| Runtime | Node.js 24 LTS | Compatible with the reference implementation and convenient for rapid iteration |
-| Language | TypeScript, strict mode | Typed contracts and maintainability |
-| WhatsApp | Baileys, exact tested version | Linked-device integration; existing sound-sticker example |
-| Media | FFmpeg and FFprobe CLI | Animated WebP, Opus, media inspection |
-| Storage | SQLite with `better-sqlite3` | Persistent quotas and request deduplication, no external service |
-| Configuration | YAML parsed with `yaml`, validated with Zod | Human-editable configuration with fail-fast validation |
-| Logging | Pino | Structured logs and redaction |
-| Scheduling | Bounded in-process queue | Small, single-instance workload |
-| Testing | Vitest | Unit and integration tests |
-| Deployment | Docker Compose, Debian-based Node image | Predictable native dependencies and persistent volumes |
+| Layer         | Choice                                      | Rationale                                                                       |
+| ------------- | ------------------------------------------- | ------------------------------------------------------------------------------- |
+| Runtime       | Node.js 24 LTS                              | Compatible with the reference implementation and convenient for rapid iteration |
+| Language      | TypeScript, strict mode                     | Typed contracts and maintainability                                             |
+| WhatsApp      | Baileys, exact tested version               | Linked-device integration; existing sound-sticker example                       |
+| Media         | FFmpeg and FFprobe CLI                      | Animated WebP, Opus, media inspection                                           |
+| Storage       | SQLite with `better-sqlite3`                | Persistent quotas and request deduplication, no external service                |
+| Configuration | YAML parsed with `yaml`, validated with Zod | Human-editable configuration with fail-fast validation                          |
+| Logging       | Pino                                        | Structured logs and redaction                                                   |
+| Scheduling    | Bounded in-process queue                    | Small, single-instance workload                                                 |
+| Testing       | Vitest                                      | Unit and integration tests                                                      |
+| Deployment    | Docker Compose, Debian-based Node image     | Predictable native dependencies and persistent volumes                          |
 
 Architecture: single-process modular monolith, one replica only. Use npm and commit the lockfile. Avoid adding a web framework or ORM. Use direct parameterized SQLite queries and versioned migrations. Pin dependency and container versions after the protocol spike succeeds.
 
@@ -47,11 +47,11 @@ Architecture: single-process modular monolith, one replica only. Use npm and com
 
 ### 3.1 Commands
 
-| Command | Behavior |
-| --- | --- |
-| `.s` | Convert a video with audio into a native sound sticker. Accept as a video caption or a text reply to a video. |
-| `.limit` | Show current personal and global quota status and next reset time; show unlimited status when applicable. |
-| `.help` | Show short usage instructions and input constraints. |
+| Command  | Behavior                                                                                                      |
+| -------- | ------------------------------------------------------------------------------------------------------------- |
+| `.s`     | Convert a video with audio into a native sound sticker. Accept as a video caption or a text reply to a video. |
+| `.limit` | Show current personal and global quota status and next reset time; show unlimited status when applicable.     |
+| `.help`  | Show short usage instructions and input constraints.                                                          |
 
 Commands are case-insensitive, use exact trimmed matches, and do not consume quota themselves except a successful `.s` conversion. Other messages, history-sync messages, group messages, bot-originated messages and status broadcasts are ignored. The bot accepts direct chats only. Do not fetch arbitrary external URLs or process view-once media.
 
@@ -161,7 +161,7 @@ quota:
   # Add quoted E.164 phone numbers here, e.g. an operator-owned +62 number.
 
 media:
-  max_input_bytes: 20971520   # 20 MiB
+  max_input_bytes: 20971520 # 20 MiB
   max_duration_seconds: 5
   sticker_max_bytes: 500000
   audio_max_bytes: 262144
@@ -196,17 +196,17 @@ All numerical defaults are proposed MVP settings, not verified WhatsApp protocol
 
 ### Quota examples
 
-| Scenario | Expected result |
-| --- | --- |
-| User consumed 9/10, global 199/200 | One more accepted reservation |
-| Two users simultaneously request the final global slot | Exactly one accepted |
-| User exhausted personal quota, global has capacity | Rejected |
-| Global exhausted, user has personal capacity | Rejected |
-| Unlimited user, both quotas exhausted | Accepted if operational capacity exists |
-| Definitive media/encoding/send failure | Reservation refunded |
-| Unknown send outcome | Reservation retained for admission day; no auto-resend |
-| Request admitted before midnight, finishes after midnight | Charged to admission day |
-| Same sender sends a new request during an active job | Rejected by concurrency guard |
+| Scenario                                                  | Expected result                                        |
+| --------------------------------------------------------- | ------------------------------------------------------ |
+| User consumed 9/10, global 199/200                        | One more accepted reservation                          |
+| Two users simultaneously request the final global slot    | Exactly one accepted                                   |
+| User exhausted personal quota, global has capacity        | Rejected                                               |
+| Global exhausted, user has personal capacity              | Rejected                                               |
+| Unlimited user, both quotas exhausted                     | Accepted if operational capacity exists                |
+| Definitive media/encoding/send failure                    | Reservation refunded                                   |
+| Unknown send outcome                                      | Reservation retained for admission day; no auto-resend |
+| Request admitted before midnight, finishes after midnight | Charged to admission day                               |
+| Same sender sends a new request during an active job      | Rejected by concurrency guard                          |
 
 ## 6. Architecture
 
@@ -294,11 +294,11 @@ Use WAL mode, foreign keys, a busy timeout and migrations. Keep all reservation 
 
 Suggested logical tables:
 
-| Table | Key | Fields |
-| --- | --- | --- |
-| `requests` | `request_key` | `sender_id`, `day_key`, `exempt`, `state`, `created_at`, `updated_at`, `error_code`, optional `outgoing_message_id` |
-| `daily_user_usage` | `(day_key, sender_id)` | `used`, `reserved` |
-| `daily_global_usage` | `day_key` | `used`, `reserved` |
+| Table                | Key                    | Fields                                                                                                              |
+| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `requests`           | `request_key`          | `sender_id`, `day_key`, `exempt`, `state`, `created_at`, `updated_at`, `error_code`, optional `outgoing_message_id` |
+| `daily_user_usage`   | `(day_key, sender_id)` | `used`, `reserved`                                                                                                  |
+| `daily_global_usage` | `day_key`              | `used`, `reserved`                                                                                                  |
 
 Store `sender_id` as canonical verified phone digits (or a stable keyed digest of those digits); use the same representation everywhere. Treat the database and session directory as sensitive. Store a UTC timestamp for audit plus an IANA-timezone-derived `YYYY-MM-DD` day key for accounting. User metrics include exempt conversions; global metrics exclude them. Exempt admission skips quota enforcement, but still creates a request and updates user metrics on success. Track in-flight state via the request table for all users.
 
@@ -364,49 +364,53 @@ Use the same volume for pairing and service startup; never run both against the 
 
 ## 11. Acceptance criteria and test plan
 
-| ID | Test | Expected |
-| --- | --- | --- |
-| AC-01 | Send a short MP4 with audible sound and `.s` caption | Native animated sticker; supported client plays sound on tap |
-| AC-02 | Reply `.s` to a video in a direct chat | Same native output, in the same chat |
-| AC-03 | Send longer input | Correctly trimmed, synchronized output within configured limits |
-| AC-04 | No audio, corrupt video, oversized upload | Clear error; no charged usage; temp files removed |
-| AC-05 | Personal quota = 2; make 3 valid requests | First two successful, third blocked |
-| AC-06 | Global quota = 2; requests from 3 limited senders | At most two successful/reserved slots, third blocked |
-| AC-07 | Concurrent requests for final global/personal slot | No oversubscription or negative counters |
-| AC-08 | Allowlisted sender with both caps exhausted | Accepted if resource capacity exists; global count unchanged |
-| AC-09 | Allowlisted user floods or sends oversized media | Operational limits enforced |
-| AC-10 | Duplicate delivery of same message event | At most one job and reservation |
-| AC-11 | Simulated definite FFmpeg or send failure | Reservation released once; no files left |
-| AC-12 | Crash after entering sending state | Unknown result retained; no automatic duplicate send |
-| AC-13 | Restart container with completed usage | Session and quota persist; no new QR if session valid |
-| AC-14 | Cross midnight in configured timezone | New requests use new day; in-flight request settles original day |
-| AC-15 | Queue full / per-sender pending limit reached | New request rejected without consuming quota |
-| AC-16 | Edit quota and allowlist, restart | New policy active; prior counts preserved |
-| AC-17 | LID without verified phone mapping | No conversion or allowlist bypass; safe error |
-| AC-18 | Invalid config, missing encoder or DB inaccessible | Startup fails with actionable error |
-| AC-19 | History, groups, own messages, unrecognized command | Ignored without spending quota |
-| AC-20 | `.limit` and `.help` | Correct daily status/reset and usage/privacy notice |
-| AC-21 | Timeout, shutdown, abandoned processing request | Bounded execution, safe cleanup and recovery |
+| ID    | Test                                                 | Expected                                                         |
+| ----- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| AC-01 | Send a short MP4 with audible sound and `.s` caption | Native animated sticker; supported client plays sound on tap     |
+| AC-02 | Reply `.s` to a video in a direct chat               | Same native output, in the same chat                             |
+| AC-03 | Send longer input                                    | Correctly trimmed, synchronized output within configured limits  |
+| AC-04 | No audio, corrupt video, oversized upload            | Clear error; no charged usage; temp files removed                |
+| AC-05 | Personal quota = 2; make 3 valid requests            | First two successful, third blocked                              |
+| AC-06 | Global quota = 2; requests from 3 limited senders    | At most two successful/reserved slots, third blocked             |
+| AC-07 | Concurrent requests for final global/personal slot   | No oversubscription or negative counters                         |
+| AC-08 | Allowlisted sender with both caps exhausted          | Accepted if resource capacity exists; global count unchanged     |
+| AC-09 | Allowlisted user floods or sends oversized media     | Operational limits enforced                                      |
+| AC-10 | Duplicate delivery of same message event             | At most one job and reservation                                  |
+| AC-11 | Simulated definite FFmpeg or send failure            | Reservation released once; no files left                         |
+| AC-12 | Crash after entering sending state                   | Unknown result retained; no automatic duplicate send             |
+| AC-13 | Restart container with completed usage               | Session and quota persist; no new QR if session valid            |
+| AC-14 | Cross midnight in configured timezone                | New requests use new day; in-flight request settles original day |
+| AC-15 | Queue full / per-sender pending limit reached        | New request rejected without consuming quota                     |
+| AC-16 | Edit quota and allowlist, restart                    | New policy active; prior counts preserved                        |
+| AC-17 | LID without verified phone mapping                   | No conversion or allowlist bypass; safe error                    |
+| AC-18 | Invalid config, missing encoder or DB inaccessible   | Startup fails with actionable error                              |
+| AC-19 | History, groups, own messages, unrecognized command  | Ignored without spending quota                                   |
+| AC-20 | `.limit` and `.help`                                 | Correct daily status/reset and usage/privacy notice              |
+| AC-21 | Timeout, shutdown, abandoned processing request      | Bounded execution, safe cleanup and recovery                     |
 
 Automate unit tests for config validation, command parsing, identity resolution, day boundaries, quota transitions, queue behavior and protocol serialization. Integration tests use real SQLite and FFmpeg with small generated fixtures and mock WhatsApp transport. Include a separate opt-in manual WhatsApp end-to-end test; CI must not require real credentials or claim playback verification from mocks.
 
 ## 12. Implementation milestones for Codex
 
 ### M0 — Protocol validation (blocking)
+
 - Read references and inspect dependencies; run the native sound sticker spike.
 - Record verified transport/schema/version and actual playback result. If a linked account or device is unavailable, leave a runnable test and mark this gate pending; do not fabricate results.
 
 ### M1 — Core conversion
+
 - Initialize strict TS project, config schema and test harness.
 - Implement media probing, bounded FFmpeg conversion, size adaptation, duration matching and temporary-file cleanup.
 - Implement and regression-test the protocol adapter validated in M0.
 
 ### M2 — WhatsApp flow and quotas
+
 - Implement session lifecycle, identity resolution, `.s`, `.limit` and `.help`.
 - Add migrations, transactional quota reservation/settlement, idempotency and bounded queue.
 - Add failure paths, log redaction and restart recovery.
 
 ### M3 — VPS readiness
+
 - Add Dockerfile, Compose, interactive pairing command and healthcheck.
 - Run automated tests and build image; document VPS deploy, config changes, backups, limitations and manual end-to-end test.
 

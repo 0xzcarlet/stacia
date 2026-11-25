@@ -1,3 +1,5 @@
+> Historical snapshot archived on 2026-11-26. For current instructions, see [protocol and compatibility](../docs/protocol.md) and the [README](../README.md). Results below describe the initial implementation, not future revisions.
+
 # Sound sticker protocol — local implementation and validation
 
 Status: **offline implementation tested; live playback gate pending**. A successful
@@ -23,6 +25,7 @@ The independent minimal wire fixture for embedded audio with seconds=2 is
 Tests also cover Baileys message generation and object/encode/decode round trips.
 
 References inspected:
+
 - https://github.com/DavidRamirez206/whatsapp-sound-sticker-bot/blob/main/src/whatsapp/send.js
 - https://github.com/DavidRamirez206/whatsapp-sound-sticker-bot/blob/main/src/sticker-audio-patch.js
 - https://docs.baron0.com/WA_STICKERS/

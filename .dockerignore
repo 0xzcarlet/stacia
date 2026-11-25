@@ -7,3 +7,6 @@ config.docker.yaml
 local-output
 *.sqlite*
 .env
+
+# Historical documentation is not needed in image build context.
+archive/
